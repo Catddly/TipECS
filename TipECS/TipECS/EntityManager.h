@@ -21,12 +21,12 @@ namespace TipECS
 		using Setting = TSetting;
 		using EntityHandle = Impl::EntityHandle<Setting>;
 		using HandleData = Impl::HandleData;
-		using EntityPrivateAccessor = Impl::EntityPrivateAccessor;
+		using EntityPrivateAccessor = Impl::EntityPrivateAccessor<Setting>;
 		using SignatureBitSetsStorage = typename Setting::SignatureBitSetsStorage;
 		using ComponentsStorage = typename ComponentsStorage<Setting>;
 		using ThisType = EntityManager<Setting>;
 	public:
-		using Entity = Entity;
+		using Entity = Entity<Setting>;
 
 		template <typename TSetting, typename TSignature>
 		class SignatureIterator
@@ -59,6 +59,7 @@ namespace TipECS
 				Entity entity = {};
 				mEntityManager.mEntityPrivateAccessor.GetHandleDataIndex(entity) = mEntityManager.GetEntityHandle(mCurrEntityID).handleDataIndex;
 				mEntityManager.mEntityPrivateAccessor.GetCounterIndex(entity) = mEntityManager.GetHandleData(mCurrEntityID).counter;
+				mEntityManager.mEntityPrivateAccessor.SetManagerPtr(entity, &mEntityManager);
 				return entity;
 			}
 
@@ -105,6 +106,7 @@ namespace TipECS
 		};
 	public:
 		EntityManager()
+			:mbCurrentFrameModified(true)
 		{
 			Reserve(100);
 		}
@@ -122,12 +124,15 @@ namespace TipECS
 
 		Entity CreateEntity() noexcept
 		{
+			mbCurrentFrameModified = true;
 			return CreateEntityImpl();
 		}
 
-		void DestroyEntity(const Entity& entity) noexcept
+		void DestroyEntity(Entity& entity) noexcept
 		{
+			mbCurrentFrameModified = true;
 			DestroyEntity(GetEntityID(entity));
+			mEntityPrivateAccessor.SetManagerPtr(entity, nullptr);
 		}
 
 		template <typename TFunc>
@@ -149,6 +154,7 @@ namespace TipECS
 					Entity entity = {};
 					mEntityPrivateAccessor.GetHandleDataIndex(entity) = GetEntityHandle(i).handleDataIndex;
 					mEntityPrivateAccessor.GetCounterIndex(entity) = GetHandleData(i).counter;
+					mEntityPrivateAccessor.SetManagerPtr(entity, this);
 					func(entity);
 				}
 			}
@@ -162,7 +168,7 @@ namespace TipECS
 			TraverseEntityID([this, &func](EntityID id)
 				{
 					if (MatchSignature<TSignature>(id))
-						ExpandSignatureCall<TSignature>(id, std::forward<TFunc>(func));
+						ExpandSignatureCall<TSignature>(id, FWD(func));
 				});
 		}
 
@@ -174,22 +180,22 @@ namespace TipECS
 			TraverseEntity([this, &func](const Entity& entity)
 				{
 					if (MatchSignature<TSignature>(GetEntityID(entity)))
-						ExpandSignatureCall<TSignature>(entity, std::forward<TFunc>(func));
+						ExpandSignatureCall<TSignature>(entity, FWD(func));
 				});
+		}
+
+		template <typename... Ts>
+		auto View() noexcept
+		{
+			using signature_t = typename TipECS::Signature<Ts...>;
+			SignatureIterator<Setting, signature_t> iterator(*this);
+			return iterator;
 		}
 
 		template <typename TComponent>
 		bool HasComponent(const Entity& entity) const noexcept
 		{
 			return HasComponent<TComponent>(GetEntityID(entity));
-		}
-
-		template <typename... Ts> 
-		auto View() noexcept
-		{
-			using signature_t = typename TipECS::Signature<Ts...>;
-			SignatureIterator<Setting, signature_t> iterator(*this);
-			return iterator;
 		}
 
 		template <typename TComponent>
@@ -201,7 +207,7 @@ namespace TipECS
 		template <typename TComponent, typename... Args>
 		auto& AddComponent(const Entity& entity, Args&&... args) noexcept
 		{
-			return AddComponent<TComponent>(GetEntityID(entity), std::forward<Args>(args)...);
+			return AddComponent<TComponent>(GetEntityID(entity), FWD(args)...);
 		}
 
 		template <typename... Ts>
@@ -231,19 +237,19 @@ namespace TipECS
 		template <typename TTag>
 		bool HasTag(const Entity& entity) const noexcept
 		{
-			return HasTag(GetEntityID(entity));
+			return HasTag<TTag>(GetEntityID(entity));
 		}
 
 		template <typename TTag>
 		void AddTag(const Entity& entity) noexcept
 		{
-			AddTag(GetEntityID(entity));
+			AddTag<TTag>(GetEntityID(entity));
 		}
 
 		template <typename TTag>
 		void RemoveTag(const Entity& entity) noexcept
 		{
-			RemoveTag(GetEntityID(entity));
+			RemoveTag<TTag>(GetEntityID(entity));
 		}
 
 		//! Clear all the entities and reset the status.
@@ -274,7 +280,13 @@ namespace TipECS
 				return;
 			}
 
-			mSize = mSizeNext = ReFreshImpl();
+			// if current frame had created or deleted entity, we have to do the refresh.
+			// otherwise, save you some effort.
+			if (mbCurrentFrameModified)
+			{
+				mSize = mSizeNext = ReFreshImpl();
+				mbCurrentFrameModified = false;
+			}
 		}
 
 		//! Get current capacity.
@@ -336,7 +348,7 @@ namespace TipECS
 			using SignatureComponents = typename Setting::SignatureBitSets::template SignatureComponents<TSignature>;
 			using UnpackedComponents = typename TMP::Unpack<UnpackedSignatureComponents, SignatureComponents>::type;
 
-			UnpackedComponents::Call(id, *this, std::forward<TFunc>(func));
+			UnpackedComponents::Call(id, *this, FWD(func));
 		};
 
 		template <typename TSignature, typename TFunc>
@@ -347,7 +359,7 @@ namespace TipECS
 			using SignatureComponents = typename Setting::SignatureBitSets::template SignatureComponents<TSignature>;
 			using UnpackedComponents = typename TMP::Unpack<UnpackedSignatureComponents, SignatureComponents>::type;
 
-			UnpackedComponents::Call(entity, *this, std::forward<TFunc>(func));
+			UnpackedComponents::Call(entity, *this, FWD(func));
 		};
 
 		template <typename... Ts>
@@ -540,6 +552,7 @@ namespace TipECS
 			Entity entity = {};
 			mEntityPrivateAccessor.GetHandleDataIndex(entity) = entityHandle.handleDataIndex;
 			mEntityPrivateAccessor.GetCounterIndex(entity) = handleData.counter;
+			mEntityPrivateAccessor.SetManagerPtr(entity, this);
 
 			assert(IsEntityValid(entity));
 			return entity;
@@ -609,7 +622,7 @@ private:
 
 			auto& compData = mComponentsStorage.AddComponent<TComponent>(entity.dataIndex);
 			// placement new to initialize the data
-			new (&compData) TComponent(std::forward<Args>(args)...);
+			new (&compData) TComponent(FWD(args)...);
 			return compData;
 		}
 
@@ -667,6 +680,8 @@ private:
 		ComponentsStorage mComponentsStorage;
 		//! Used to access entity private member data.
 		EntityPrivateAccessor mEntityPrivateAccessor;
+		//! Used to do some optimization.
+		bool mbCurrentFrameModified;
 	};
 
 }

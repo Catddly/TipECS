@@ -38,6 +38,8 @@ namespace TMP
 	friend bool operator>=(const TYPE& x, const NAME& y) { return !static_cast<bool>(y > x); } \
 	}
 
+#define FWD(...) ::std::forward<decltype(__VA_ARGS__)>(__VA_ARGS__)
+
 	/// begin namespace Impl
 	namespace Impl
 	{
@@ -224,14 +226,14 @@ namespace TMP
 #endif
 		constexpr void ForTuple_Impl(TTuple& tuple, TFunc&& func)
 		{
-			ForTuple_ImplCall(tuple, std::forward<TFunc>(func), Indices{});
+			ForTuple_ImplCall(tuple, FWD(func), Indices{});
 		}
 	}
 
 	template <typename TTuple, typename TFunc>
 	constexpr void ForTuple(TTuple& tuple, TFunc&& func)
 	{
-		Impl::ForTuple_Impl<std::tuple_size<TTuple>::value>(tuple, std::forward<TFunc>(func));
+		Impl::ForTuple_Impl<std::tuple_size<TTuple>::value>(tuple, FWD(func));
 	}
 
 }

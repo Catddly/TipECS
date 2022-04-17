@@ -143,14 +143,14 @@ void TestBitSetsStorage()
 	std::cout << bitsetC << std::endl;
 }
 
-void TestEntittyManager()
+void TestEntityManager()
 {
 	TipECS::EntityManager<MySetting> entityManager;
-	std::vector<TipECS::Entity> myEntities;
+	std::vector<TipECS::Entity<MySetting>> myEntities;
 
 	myEntities.push_back(entityManager.CreateEntity());
-	entityManager.AddComponent<A>(myEntities.back(), 0);
-	entityManager.AddComponent<C>(myEntities.back(), "Hello!");
+	myEntities.back().AddComponent<A>(0);
+	myEntities.back().AddComponent<C>("Hello!");
 
 	auto [a, c] = entityManager.GetComponent<A, C>(myEntities[0]);
 	a.a = 66666;
@@ -207,7 +207,7 @@ void TestEntittyManager()
 	auto view = entityManager.View<A, C>();
 	for (auto entity : view)
 	{
-		auto [a, c] = entityManager.GetComponent<A, C>(entity);
+		auto [a, c] = entity.GetComponent<A, C>();
 		std::cout << "ID " << a.a << " " <<
 			"Text: " << c.text << std::endl;
 		//std::cout << "ID " << entityManager.GetComponent<A>(entity).a << " " <<
@@ -223,8 +223,7 @@ void TestEntittyManager()
 	entityManager.AddComponent<A>(myEntities[3], 3);
 	entityManager.AddComponent<C>(myEntities[3], "Ahhhhhh!");
 
-	entityManager.DestroyEntity(myEntities[1]);
-	entityManager.RemoveComponent<C>(myEntities[1]);
+	myEntities[1].RemoveComponent<C>();
 
 	entityManager.PrintStatus();
 
@@ -304,7 +303,7 @@ int main()
 	//TestFilter();
 	//TestApply();
 	//TestBitSetsStorage();
-	TestEntittyManager();
+	TestEntityManager();
 	//TestComponentsStorage();
 	//TestAddComponent();
 }
