@@ -19,6 +19,8 @@ namespace TipECS
 
 	namespace Impl
 	{
+		constexpr size_t INVALID_INDEX = size_t(-1);
+
 		template <typename TSettings>
 		struct EntityHandle
 		{
@@ -102,10 +104,20 @@ namespace TipECS
 		{
 			pManager->RemoveTag<TTag>(*this);
 		}
+
+		inline bool IsAlive() const
+		{
+			return pManager->IsAlive(*this);
+		}
+
+		inline bool IsValid() const
+		{
+			return pManager->IsValid(*this);
+		}
 	private:
 		friend struct TipECS::Impl::EntityPrivateAccessor<Setting>;
 		EntityManager<Setting>* pManager = nullptr;
-		HandleDataIndex handleDataIndex;
+		HandleDataIndex handleDataIndex = HandleDataIndex{ Impl::INVALID_INDEX };
 		CounterIndex counter; //! Used to check if the handle is invalid as a version number.
 	};
 
