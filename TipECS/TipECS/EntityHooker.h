@@ -26,8 +26,8 @@ namespace TipECS
 		using Entity = Entity<Setting>;
 		typedef void(*ComponentHookFunc)(const Entity& entity, TComp& comp);
 
-		inline void HookOnComponentAdded(ComponentHookFunc func) noexcept { if (func) mOnAddedFunc = func; }
-		inline void HookOnComponentRemoved(ComponentHookFunc func) noexcept { if (func) mOnRemovedFunc = func; }
+		inline void HookOnAdded(ComponentHookFunc func) noexcept { if (func) mOnAddedFunc = func; }
+		inline void HookOnRemoved(ComponentHookFunc func) noexcept { if (func) mOnRemovedFunc = func; }
 	private:
 		friend class EntityHookerContainer<Setting>;
 		friend class EntityManager<Setting>;
@@ -58,8 +58,8 @@ namespace TipECS
 		using Entity = Entity<Setting>;
 		typedef void(*TagHookFunc)(const Entity& entity);
 
-		inline void HookOnTagAdded(TagHookFunc func) noexcept { if (func) mOnAddedFunc = func; }
-		inline void HookOnTagRemoved(TagHookFunc func) noexcept { if (func) mOnRemovedFunc = func; }
+		inline void HookOnAdded(TagHookFunc func) noexcept { if (func) mOnAddedFunc = func; }
+		inline void HookOnRemoved(TagHookFunc func) noexcept { if (func) mOnRemovedFunc = func; }
 	private:
 		friend class EntityHookerContainer<Setting>;
 		friend class EntityManager<Setting>;
@@ -117,7 +117,7 @@ namespace TipECS
 		}
 	private:
 		ComponentHookers mComponentHookers;
-		ComponentHookers mTagHookers;
+		TagHookers mTagHookers;
 	};
 
 }

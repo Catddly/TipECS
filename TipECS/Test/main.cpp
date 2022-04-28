@@ -173,17 +173,24 @@ void OnComponentCRemoved(const TipECS::Entity<MySetting>& entity, C& comp)
 	std::cout << "C had been removed!\n";
 }
 
+void OnTagAAdded(const TipECS::Entity<MySetting>& entity)
+{
+	std::cout << "Tag A had been added!\n";
+}
+
 void TestEntityManager()
 {
 	TipECS::EntityManager<MySetting> entityManager;
 	std::vector<TipECS::Entity<MySetting>> myEntities;
 
-	entityManager.GetComponentHooker<A>().HookOnComponentAdded(OnComponentAAdded);
-	entityManager.GetComponentHooker<B>().HookOnComponentAdded(OnComponentBAdded);
-	entityManager.GetComponentHooker<C>().HookOnComponentAdded(OnComponentCAdded);
-	entityManager.GetComponentHooker<A>().HookOnComponentRemoved(OnComponentARemoved);
-	entityManager.GetComponentHooker<B>().HookOnComponentRemoved(OnComponentBRemoved);
-	entityManager.GetComponentHooker<C>().HookOnComponentRemoved(OnComponentCRemoved);
+	entityManager.GetComponentHooker<A>().HookOnAdded(OnComponentAAdded);
+	entityManager.GetComponentHooker<B>().HookOnAdded(OnComponentBAdded);
+	entityManager.GetComponentHooker<C>().HookOnAdded(OnComponentCAdded);
+	entityManager.GetComponentHooker<A>().HookOnRemoved(OnComponentARemoved);
+	entityManager.GetComponentHooker<B>().HookOnRemoved(OnComponentBRemoved);
+	entityManager.GetComponentHooker<C>().HookOnRemoved(OnComponentCRemoved);
+
+	entityManager.GetTagHooker<TagA>().HookOnAdded(OnTagAAdded);
 
 	myEntities.push_back(entityManager.CreateEntity());
 	myEntities.back().AddComponent<A>(0);
