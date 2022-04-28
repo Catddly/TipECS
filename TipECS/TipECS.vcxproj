@@ -86,6 +86,7 @@
     <ClInclude Include="TipECS\Components.h" />
     <ClInclude Include="TipECS\Config.h" />
     <ClInclude Include="TipECS\Entity.h" />
+    <ClInclude Include="TipECS\EntityHooker.h" />
     <ClInclude Include="TipECS\EntityManager.h" />
     <ClInclude Include="TipECS\Registry.h" />
     <ClInclude Include="TipECS\TMPLib.h" />

@@ -143,10 +143,47 @@ void TestBitSetsStorage()
 	std::cout << bitsetC << std::endl;
 }
 
+void OnComponentAAdded(const TipECS::Entity<MySetting>& entity, A& comp)
+{
+	std::cout << "A had been added!\n";
+}
+
+void OnComponentBAdded(const TipECS::Entity<MySetting>& entity, B& comp)
+{
+	std::cout << "B had been added!\n";
+}
+
+void OnComponentCAdded(const TipECS::Entity<MySetting>& entity, C& comp)
+{
+	std::cout << "C had been added!\n";
+}
+
+void OnComponentARemoved(const TipECS::Entity<MySetting>& entity, A& comp)
+{
+	std::cout << "A had been removed!\n";
+}
+
+void OnComponentBRemoved(const TipECS::Entity<MySetting>& entity, B& comp)
+{
+	std::cout << "B had been removed!\n";
+}
+
+void OnComponentCRemoved(const TipECS::Entity<MySetting>& entity, C& comp)
+{
+	std::cout << "C had been removed!\n";
+}
+
 void TestEntityManager()
 {
 	TipECS::EntityManager<MySetting> entityManager;
 	std::vector<TipECS::Entity<MySetting>> myEntities;
+
+	entityManager.GetComponentHooker<A>().HookOnComponentAdded(OnComponentAAdded);
+	entityManager.GetComponentHooker<B>().HookOnComponentAdded(OnComponentBAdded);
+	entityManager.GetComponentHooker<C>().HookOnComponentAdded(OnComponentCAdded);
+	entityManager.GetComponentHooker<A>().HookOnComponentRemoved(OnComponentARemoved);
+	entityManager.GetComponentHooker<B>().HookOnComponentRemoved(OnComponentBRemoved);
+	entityManager.GetComponentHooker<C>().HookOnComponentRemoved(OnComponentCRemoved);
 
 	myEntities.push_back(entityManager.CreateEntity());
 	myEntities.back().AddComponent<A>(0);

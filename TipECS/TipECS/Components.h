@@ -34,7 +34,7 @@ namespace TipECS
 #ifdef USE_STL
 		using TupleOfVectors = std::tuple<ComponentData<Ts>...>;
 #endif
-		// this is a std::tuple<std::vector<size_t>>, each vector refers to a component type.
+		// this is a std::tuple<ComponentData<T>...>, each vector refers to a component type.
 		// it is used for indexing the data to the packed data array.
 		using ComponentsType = typename TMP::Unpack<TupleOfVectors, ComponentList>::type;
 	public:
