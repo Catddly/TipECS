@@ -91,6 +91,28 @@ namespace TipECS
 #endif
 		}
 
+		// return a vector contained all the component data,
+		// some of them may be invalid, but not destroyed.
+		template <typename TComponent>
+		auto& GetComponentData()
+		{
+			static_assert(Setting::template IsComponent<TComponent>(), "TComponent is not registered!");
+#ifdef USE_STL
+			auto& component = std::get<ComponentData<TComponent>>(mComponentsData);
+			return component.compData;
+#endif
+		}
+
+		template <typename TComponent>
+		auto& GetComponentDataIndices()
+		{
+			static_assert(Setting::template IsComponent<TComponent>(), "TComponent is not registered!");
+#ifdef USE_STL
+			auto& component = std::get<ComponentData<TComponent>>(mComponentsData);
+			return component.dataIndices;
+#endif
+		}
+
 		void Reserve(size_t n)
 		{
 			std::apply([this, n](auto&... v)

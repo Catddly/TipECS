@@ -340,6 +340,84 @@ void TestAddComponent()
 {
 }
 
+void TestComponentTraverse()
+{
+	TipECS::EntityManager<MySetting> entityManager;
+	std::vector<TipECS::Entity<MySetting>> myEntities;
+
+	myEntities.push_back(entityManager.CreateEntity());
+	myEntities.back().AddComponent<A>(0);
+	myEntities.back().AddComponent<C>("Hello!");
+
+	auto [a, c] = entityManager.GetComponent<A, C>(myEntities[0]);
+	a.a = 66666;
+	c.text = "Test!?";
+
+	myEntities.push_back(entityManager.CreateEntity());
+	entityManager.AddComponent<A>(myEntities.back(), 1);
+	entityManager.AddComponent<C>(myEntities.back(), "Bye!");
+
+	myEntities.push_back(entityManager.CreateEntity());
+	entityManager.AddComponent<A>(myEntities.back(), 2);
+	entityManager.AddComponent<C>(myEntities.back(), "No!");
+
+	myEntities.push_back(entityManager.CreateEntity());
+	entityManager.AddComponent<A>(myEntities.back(), 3);
+	entityManager.AddComponent<C>(myEntities.back(), "Ahhhhhh!");
+
+	entityManager.DestroyEntity(myEntities[1]);
+	entityManager.DestroyEntity(myEntities[3]);
+
+	myEntities[1] = entityManager.CreateEntity();
+	entityManager.AddComponent<A>(myEntities[1], 3);
+	entityManager.AddComponent<C>(myEntities[1], "Bye!");
+
+	myEntities[3] = entityManager.CreateEntity();
+	entityManager.AddComponent<A>(myEntities[3], 1);
+	entityManager.AddComponent<C>(myEntities[3], "Ahhhhhh!");
+
+	myEntities[1].RemoveComponent<C>();
+
+	entityManager.ReFresh();
+	std::cout << "ReFreshed!\n";
+	entityManager.PrintStatus();
+
+	auto entity1 = entityManager.CreateEntity();
+	auto entity2 = entityManager.CreateEntity();
+	entity2.AddComponent<A>(3434);
+	auto entity3 = entityManager.CreateEntity();
+	entityManager.DestroyEntity(entity2);
+	entity3.AddComponent<A>(2223);
+
+	entityManager.PrintStatus();
+
+	entityManager.ReFresh();
+	std::cout << "ReFreshed!\n";
+	entityManager.PrintStatus();
+
+	entityManager.TraverseComponent<A>([](auto& entity, const A& comp)
+		{
+			std::cout << "A: " << comp.a << "\n";
+			if (entity.HasComponent<C>())
+				std::cout << "Has C: " << entity.GetComponent<C>().text << "\n";
+		});
+	std::cout << "\n";
+
+	entityManager.TraverseEntity([](auto& entity)
+		{
+			if (entity.HasComponent<A>() && entity.HasComponent<C>())
+				std::cout << "Has A and C!\n";
+			else if (entity.HasComponent<C>())
+				std::cout << "Has C!\n";
+			else if (entity.HasComponent<A>())
+				std::cout << "Has A!\n";
+			else
+				std::cout << "Empty!\n";
+		});
+
+	std::cout << "\n\n";
+}
+
 int main()
 {
 	//TestTMPLib();
@@ -347,7 +425,8 @@ int main()
 	//TestFilter();
 	//TestApply();
 	//TestBitSetsStorage();
-	TestEntityManager();
+	//TestEntityManager();
 	//TestComponentsStorage();
 	//TestAddComponent();
+	TestComponentTraverse();
 }

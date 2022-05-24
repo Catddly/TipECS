@@ -43,7 +43,6 @@ namespace TipECS
 			SignatureIterator(EntityManager& manager)
 				:mEntityManager(manager)
 			{
-				PreAdvance();
 			}
 
 			bool operator==(const SignatureIterator& rhs) const
@@ -187,12 +186,31 @@ namespace TipECS
 				});
 		}
 
+		template <typename TComponent, typename TFunc>
+		void TraverseComponent(TFunc&& func)
+		{
+			auto& compData = mComponentsStorage.GetComponentData<TComponent>();
+			auto& compDataIndices = mComponentsStorage.GetComponentDataIndices<TComponent>();
+
+			for (EntityID i{ 0 }; i < mSizeNext; ++i)
+			{
+				if (IsAlive(i) && HasComponent<TComponent>(i))
+				{
+					size_t index = compDataIndices[GetEntityHandle(i).dataIndex];
+					Entity entity = {};
+					mEntityPrivateAccessor.GetHandleDataIndex(entity) = GetEntityHandle(i).handleDataIndex;
+					mEntityPrivateAccessor.GetCounterIndex(entity) = GetHandleData(i).counter;
+					mEntityPrivateAccessor.SetManagerPtr(entity, this);
+					func(entity, compData[index]);
+				}
+			}
+		}
+
 		template <typename... Ts>
 		auto View() noexcept
 		{
 			using signature_t = typename TipECS::Signature<Ts...>;
-			SignatureIterator<Setting, signature_t> iterator(*this);
-			return iterator;
+			return SignatureIterator<Setting, signature_t>(*this);
 		}
 
 		template <typename TComponent>
